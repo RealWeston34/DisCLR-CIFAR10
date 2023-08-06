@@ -36,4 +36,23 @@ temperature: 0.5 # see appendix B.7.: Optimal temperature under different batch 
 
 # finetune options
 finetune_epochs: 100 #100
-load_path: './simclr_resnet18_epoch20.pt' #1000 # checkpoint for finetune
+load_path: './simclr_resnet18_epoch20.pt' # checkpoint for finetune
+
+# save_reprs options
+reprs_batch_size: 1024
+gpu: 0
+exp_id: 1
+extra_info: null
+reprs_workers: 12
+reprs_seed: null
+reprs_epochs: 1
+reprs_data: ./data/cifar-10-batches-py
+reprs_pretrained: ./simclr_resnet18_epoch20.pt
+reprs_dataset: 'cifar10_train'
+repr_size: 0
+start_epoch: 0
+
+# test collapse options
+collapse_pretrained: data/resnet18_exp0001/cifar10/train_reprs_e0_128.pt
+type: svd
+normalize: False

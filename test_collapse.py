@@ -2,17 +2,14 @@ import os
 import torch
 import argparse
 import os.path as osp
+import hydra
+from omegaconf import DictConfig
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('pretrained', type=str, help='path to saved simclr representations')
-    parser.add_argument('--type', type=str, default='svd')
-    parser.add_argument('--normalize', action="store_true")
-    args = parser.parse_args()
-
+@hydra.main(version_base="1.3.2 ", config_path = ".", config_name="simclr_config")
+def test(args: DictConfig) -> None:
     # load the data
-    folder = osp.join(osp.dirname(args.pretrained))
-    data = torch.load(args.pretrained)
+    folder = osp.join(osp.dirname(args.collapse_pretrained))
+    data = torch.load(args.collapse_pretrained)
     reprs = data['representations']
     reprs = reprs.reshape(-1, reprs.shape[-1])
 
@@ -31,9 +28,12 @@ if __name__ == '__main__':
 
     # save norms and std
     normalize_str = 'normalized_' if args.normalize else ''
-    fname = f"{os.path.basename(args.pretrained).split('.')[0]}_{normalize_str}{args.type}.pt"
+    fname = f"{os.path.basename(args.collapse_pretrained).split('.')[0]}_{normalize_str}{args.type}.pt"
     # torch.save(dict(norms=norms, stds=stds), osp.join(folder, fname))
     torch.save(dict(stds=stds), osp.join(folder, fname))
+
+if __name__ == '__main__':
+    test()
 
 
 

@@ -1,5 +1,5 @@
 """Given some pretrained model, get representations for every image in a desired dataset"""
-import argparse
+import hydra
 import os
 import random
 import torch
@@ -15,6 +15,7 @@ import torchvision.models as torchvision_models
 from torchvision.models import resnet18, resnet34
 from torchvision import datasets, transforms
 from tqdm import tqdm
+from omegaconf import DictConfig
 from models import SimCLR
 
 torchvision_model_names = sorted(name for name in torchvision_models.__dict__
@@ -23,59 +24,35 @@ torchvision_model_names = sorted(name for name in torchvision_models.__dict__
 
 model_names = ['vit_small', 'vit_base', 'vit_conv_small', 'vit_conv_base'] + torchvision_model_names
 
-parser = argparse.ArgumentParser(description='Saving MoCo representations')
-parser.add_argument('--data', metavar='DIR', help='path to dataset')
-parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet18',
-                    choices=model_names,
-                    help='model architecture')
-parser.add_argument('--projection_dim', default=128, type=int)
-parser.add_argument('--dataset_type', default='cifar10_train', type=str)
-parser.add_argument('-j', '--workers', default=12, type=int, metavar='N',
-                    help='number of data loading workers (default: 8)')
-parser.add_argument('--epochs', default=1, type=int, metavar='N',
-                    help='number of total epochs to run')
-parser.add_argument('-b', '--batch-size', default=4096, type=int,
-                    metavar='N',
-                    help='mini-batch size (default: 4096)')
-parser.add_argument('--gpu', default=0, type=int,
-                    help='GPU id to use.')
-parser.add_argument('--seed', default=None, type=int,
-                    help='seed for initializing training. ')
-parser.add_argument('--pretrained', default='', type=str,
-                    help='path to simclr pretrained checkpoint')
-parser.add_argument('--pretrained_distributed', action='store_true',
-                    help='was the pretrained checkpoint distributed?')
-parser.add_argument('--exp_id', default=-1, type=int)
-parser.add_argument('--extra_info', default=None, type=str, help='extra info to put in folder name')
-# parser.add_argument('--alg', type=str, default='simsiam')
     
 def create_and_load_model(args):
     # create model
-    print("=> creating model '{}'".format(args.arch))
-    base_encoder = eval(args.arch)
+    print("=> creating model '{}'".format(args.backbone))
+    base_encoder = eval(args.backbone)
     contrast_model = SimCLR(base_encoder, projection_dim = args.projection_dim).cuda()
     args.repr_size = contrast_model.feature_dim
 
     # load from checkpoint
-    assert args.pretrained
-    if os.path.isfile(args.pretrained):
-        print("=> loading checkpoint '{}'".format(args.pretrained))
-        contrast_model.load_state_dict(torch.load(args.pretrained).state_dict())
+    assert args.reprs_pretrained
+    if os.path.isfile(args.reprs_pretrained):
+        print("=> loading checkpoint '{}'".format(args.reprs_pretrained))
+        contrast_model.load_state_dict(torch.load(args.reprs_pretrained).state_dict())
         args.start_epoch = 0
-        print("=> loaded pre-trained model '{}'".format(args.pretrained))
+        print("=> loaded pre-trained model '{}'".format(args.reprs_pretrained))
     else:
-        raise RuntimeError("=> no checkpoint found at '{}'".format(args.pretrained))
+        raise RuntimeError("=> no checkpoint found at '{}'".format(args.reprs_pretrained))
     model = contrast_model.enc
     return model.cuda(args.gpu)
 
 
-def main():
-    args = parser.parse_args()
 
-    if args.seed is not None:
-        random.seed(args.seed)
-        torch.manual_seed(args.seed)
-        np.random.seed(args.seed)
+@hydra.main(version_base="1.3.2 ", config_path = ".", config_name="simclr_config")
+def main(args: DictConfig) -> None:
+    
+    if args.reprs_seed is not None:
+        random.seed(args.reprs_seed)
+        torch.manual_seed(args.reprs_seed)
+        np.random.seed(args.reprs_seed)
 
     print("Use GPU: {} for training".format(args.gpu))
 
@@ -83,8 +60,8 @@ def main():
     cudnn.benchmark = True
 
     # Load the dataset
-    if args.dataset_type == 'cifar10_train':
-        data_dir = os.path.abspath(args.data)
+    if args.reprs_dataset == 'cifar10_train':
+        data_dir = os.path.abspath(args.reprs_data)
         val_trans = transforms.Compose([transforms.ToTensor(),])
         dataset = torchvision.datasets.CIFAR10(root=data_dir, 
                                                train=True, 
@@ -94,16 +71,16 @@ def main():
         print("=> Your dataset is currently not supported.")
         exit()
     print("Dataset size:", len(dataset))
-    loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size, shuffle=False,
-                                         num_workers=args.workers, pin_memory=True, drop_last=False)
-    dataset_name, split = args.dataset_type.split('_')
-    folder = f"data/{args.arch}_exp{args.exp_id:04d}"
+    loader = torch.utils.data.DataLoader(dataset, batch_size=args.reprs_batch_size, shuffle=False,
+                                         num_workers=args.reprs_workers, pin_memory=True, drop_last=False)
+    dataset_name, split = args.reprs_dataset.split('_')
+    folder = f"data/{args.backbone}_exp{args.exp_id:04d}"
     if args.extra_info:
         folder += f"_{args.extra_info}"
     folder += f"/{dataset_name}"
 
     os.makedirs(folder, exist_ok=True)
-    for epoch in range(args.epochs):
+    for epoch in range(args.reprs_epochs):
         print('Computing representations')
         result = get_reprs(loader, model, args, len(dataset))
         fname = f"{split}_reprs_e{epoch}_{args.projection_dim}.pt"
