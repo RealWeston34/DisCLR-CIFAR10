@@ -1,0 +1,7 @@
+data
+logs
+_pycache_
+nohup.out
+*.pt
+*.pth
+*.pyc
