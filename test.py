@@ -18,4 +18,4 @@ for name, param in model.named_parameters():
     if not torch.equal(param, initial_state_dict[name]):
         print(f"Parameter {name} has changed")
 
-print("test")
+# this is a test
