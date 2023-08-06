@@ -49,8 +49,10 @@ class CIFAR10Pair(CIFAR10):
 
 
 def nt_xent(x, t=0.5):
+    print(f"dimensions before normalization: {x.shape}")
     x = F.normalize(x, dim=1)
-
+    print(f"dimensions after normalization: {x.shape}")
+    
     x_scores =  (x @ x.T).clamp(min=1e-7)  # normalized cosine similarity scores
     x_scale = x_scores / t   # scale with temperature
 

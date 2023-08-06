@@ -26,6 +26,7 @@ class SimCLR(nn.Module):
         self.pred_epochs = pred_epochs
         self.batch_size = batch_size
         self.lr = lr
+        
     # Combining with NashAE framework, on each iteration train an autoEncoder and feed into foward the disentangle representations
     def forward(self, x):
         feature = self.enc(x)
@@ -42,7 +43,7 @@ class SimCLR(nn.Module):
     def get_disentangler(self):
         n_lat = 128 # bottleneck 
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        output = Disentangler(device=device, z_dim = n_lat)
+        output = Disentangler(device=device, z_dim = n_lat, inp_norm=cifar10_norm, inp_inorm=cifar10_inorm)
         return output
 
     
