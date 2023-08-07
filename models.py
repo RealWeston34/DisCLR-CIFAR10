@@ -37,7 +37,7 @@ class SimCLR(nn.Module):
         
     def get_disentangled_projection(self, disentangler, dataset):
         # train predictors for n_epochs
-        disentangler.fit(dataset=dataset, n_group=self.pred_epochs, batch_size=self.batch_size, pred_lr=self.lr, ar=0.2)
+        disentangler.fit(dataset=dataset, n_group=self.pred_epochs, batch_size=self.batch_size, pred_lr=self.lr, ar=0.1)
         return disentangler.predict_z(dataset)
     
     def get_disentangler(self):
