@@ -36,7 +36,7 @@ temperature: 0.5 # see appendix B.7.: Optimal temperature under different batch 
 
 # finetune options
 finetune_epochs: 100 #100
-load_path: './simclr_resnet18_epoch10.pt' # checkpoint for finetune
+load_path: './simclr_resnet18_epoch30.pt' # checkpoint for finetune
 
 # save_reprs options
 reprs_batch_size: 1024
