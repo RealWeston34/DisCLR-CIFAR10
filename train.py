@@ -106,12 +106,14 @@ def train(args: DictConfig) -> None:
                             download=True)
     
     disentangler = get_disentangler(dataset=train_set, pred_epochs=10, b_size=100, lr=0.01)
-
+    
     train_loader = DataLoader(train_set,
                               batch_size=args.batch_size,
                               shuffle=True,
                               num_workers=args.workers,
                               drop_last=True)
+    
+
 
     # Prepare model
     assert args.backbone in ['resnet18', 'resnet34']

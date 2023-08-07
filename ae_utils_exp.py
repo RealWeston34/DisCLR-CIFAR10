@@ -187,7 +187,8 @@ class Disentangler(torch.nn.Module):
             pred_loss_agg = 0.
             for b in range(batch_per_group):
                 print("\rGroup: {}\t{:2.0f}%".format(g, 100*(b+1)/batch_per_group), end="")
-                data = next(dataloader_ae)
+                data_list = next(dataloader_ae)
+                data = data_list[0] # for CIFAR10 dataset
                 # push examples through the Disentangler, get latent space activations
                 ex = data.to(self.device)
                 ex_no_grad = ex.detach()
@@ -205,4 +206,6 @@ class Disentangler(torch.nn.Module):
             # print("\tRec: {:1.4f}\tAdv: {:1.4f}\tPred: {:1.4f}".format(\
             #     rec_loss[g], adv_loss[g], pred_loss[g]))
         return rec_loss.detach(), adv_loss.detach(), pred_loss.detach()
+
+
     
