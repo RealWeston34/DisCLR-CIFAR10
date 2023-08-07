@@ -13,6 +13,7 @@ from torch.utils.data import DataLoader
 from torchvision.datasets import CIFAR10
 from torchvision.models import resnet18, resnet34
 from torchvision import transforms
+from ae_utils_exp import Disentangler, cifar10_inorm, cifar10_norm
 
 from models import SimCLR
 from tqdm import tqdm
@@ -71,6 +72,13 @@ def get_lr(step, total_steps, lr_max, lr_min):
     """Compute learning rate according to cosine annealing schedule."""
     return lr_min + (lr_max - lr_min) * 0.5 * (1 + np.cos(step / total_steps * np.pi))
 
+def get_disentangler(dataset, pred_epochs, b_size, lr):
+    n_lat = 128 # bottleneck 
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    output = Disentangler(device=device, z_dim = n_lat, inp_norm=cifar10_norm, inp_inorm=cifar10_inorm)
+    output.fit(dataset=dataset, n_group=pred_epochs, batch_size=b_size, pred_lr=lr)
+    return output
+
 
 # color distortion composed by color jittering and color dropping.
 # See Section A of SimCLR: https://arxiv.org/abs/2002.05709
@@ -96,6 +104,8 @@ def train(args: DictConfig) -> None:
                             train=True,
                             transform=train_transform,
                             download=True)
+    
+    disentangler = get_disentangler(dataset=train_set, pred_epochs=10, b_size=100, lr=0.01)
 
     train_loader = DataLoader(train_set,
                               batch_size=args.batch_size,
@@ -106,7 +116,7 @@ def train(args: DictConfig) -> None:
     # Prepare model
     assert args.backbone in ['resnet18', 'resnet34']
     base_encoder = eval(args.backbone)
-    model = SimCLR(base_encoder, projection_dim=args.projection_dim, pred_epochs=10).cuda()
+    model = SimCLR(base_encoder, disentangler=disentangler, projection_dim=args.projection_dim).cuda()
     logger.info('Base model: {}'.format(args.backbone))
     logger.info('feature dim: {}, projection dim: {}'.format(model.feature_dim, args.projection_dim))
 

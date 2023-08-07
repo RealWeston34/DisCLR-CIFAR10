@@ -162,7 +162,7 @@ class Disentangler(torch.nn.Module):
         self.ae_optim = torch.optim.Adam(list(self.enc.parameters()) + list(self.dec.parameters()), lr=lr)
         self.preds_optim = torch.optim.Adam(self.preds.parameters(), lr=pred_lr)
     
-    def fit(self, dataset, n_group, batch_per_group=10, lr=0.001, pred_lr=0.01, ar=0.0,
+    def fit(self, dataset, n_group, batch_per_group=10, lr=0.001, pred_lr=0.01, ar=0.2,
             batch_size=100, preds_train_iters=5, generator_ae=None):
         
         self.train()
@@ -186,7 +186,7 @@ class Disentangler(torch.nn.Module):
             adv_loss_agg = 0.
             pred_loss_agg = 0.
             for b in range(batch_per_group):
-                # print("\rGroup: {}\t{:2.0f}%".format(g, 100*(b+1)/batch_per_group), end="")
+                print("\rGroup: {}\t{:2.0f}%".format(g, 100*(b+1)/batch_per_group), end="")
                 data = next(dataloader_ae)
                 # push examples through the Disentangler, get latent space activations
                 ex = data.to(self.device)
