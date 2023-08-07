@@ -13,6 +13,7 @@ from torch.utils.data import DataLoader
 from torchvision.datasets import CIFAR10
 from torchvision.models import resnet18, resnet34
 from torchvision import transforms
+from ae_utils_exp import Disentangler, cifar10_inorm, cifar10_norm
 
 from models import SimCLR
 from tqdm import tqdm
@@ -46,6 +47,12 @@ class CIFAR10Pair(CIFAR10):
         img = Image.fromarray(img)  # .convert('RGB')
         imgs = [self.transform(img), self.transform(img)]
         return torch.stack(imgs), target  # stack a positive pair
+    
+def get_disentangler():
+    n_lat = 128 # bottleneck 
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    output = Disentangler(device=device, z_dim = n_lat, inp_norm=cifar10_norm, inp_inorm=cifar10_inorm)
+    return output
 
 
 def nt_xent(x, t=0.5):
@@ -100,11 +107,14 @@ def train(args: DictConfig) -> None:
                               shuffle=True,
                               num_workers=args.workers,
                               drop_last=True)
+    
+
 
     # Prepare model
     assert args.backbone in ['resnet18', 'resnet34']
     base_encoder = eval(args.backbone)
-    model = SimCLR(base_encoder, projection_dim=args.projection_dim, pred_epochs=10).cuda()
+    disentangler = get_disentangler()
+    model = SimCLR(base_encoder, projection_dim=args.projection_dim, pred_epochs=1, disentangler=disentangler).cuda()
     logger.info('Base model: {}'.format(args.backbone))
     logger.info('feature dim: {}, projection dim: {}'.format(model.feature_dim, args.projection_dim))
 
