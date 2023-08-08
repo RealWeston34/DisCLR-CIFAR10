@@ -4,7 +4,7 @@ from ae_utils_exp import Disentangler, cifar10_norm, cifar10_inorm
 
 
 class SimCLR(nn.Module):
-    def __init__(self, base_encoder, disentangler=None, projection_dim=128, pred_epochs = 0, batch_size = 117, lr = 0.01):
+    def __init__(self, base_encoder, disentangler=None, projection_dim=128):
         super().__init__()
         self.enc = base_encoder(weights=None)  # load model from torchvision.models without pretrained weights.
         self.feature_dim = self.enc.fc.in_features
@@ -23,10 +23,7 @@ class SimCLR(nn.Module):
                                        nn.Linear(2048, projection_dim))
         # From nashAE framework use method to disentangle representations
         self.disentangler = disentangler
-        self.pred_epochs = pred_epochs
-        self.batch_size = batch_size
-        self.lr = lr
-        
+
     # Combining with NashAE framework, on each iteration train an autoEncoder and feed into foward the disentangle representations
     def forward(self, x):
         feature = self.enc(x)
@@ -36,7 +33,6 @@ class SimCLR(nn.Module):
         
     def get_disentangled_projection(self, disentangler, dataset):
         # train predictors for n_epochs
-        disentangler.fit(dataset=dataset, n_group=self.pred_epochs, batch_size=self.batch_size, pred_lr=self.lr, ar=0.1)
         return disentangler.predict_z(dataset)
 
     

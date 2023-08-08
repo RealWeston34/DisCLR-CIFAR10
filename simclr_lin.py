@@ -14,6 +14,7 @@ from torchvision import transforms
 from torchvision.models import resnet18, resnet34
 from models import SimCLR
 from tqdm import tqdm
+from train import get_disentangler
 
 
 logger = logging.getLogger(__name__)
@@ -117,7 +118,8 @@ def finetune(args: DictConfig) -> None:
 
     # Prepare model
     base_encoder = eval(args.backbone)
-    pre_model = SimCLR(base_encoder, projection_dim=args.projection_dim, pred_epochs=10).cuda()
+    disentangler = get_disentangler()
+    pre_model = SimCLR(base_encoder, projection_dim=args.projection_dim, pred_epochs=10, disentangler=disentangler).cuda()
     pre_model.load_state_dict(torch.load(args.load_path).state_dict())
     model = LinModel(pre_model.enc, feature_dim=pre_model.feature_dim, n_classes=len(train_set.targets))
     model = model.cuda()
