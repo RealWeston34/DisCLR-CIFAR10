@@ -14,7 +14,7 @@ from torchvision import transforms
 from torchvision.models import resnet18, resnet34
 from models import SimCLR
 from tqdm import tqdm
-from train import get_disentangler
+from ae_utils_exp import Disentangler, cifar10_inorm, cifar10_norm
 
 
 logger = logging.getLogger(__name__)
@@ -85,6 +85,12 @@ def run_epoch(model, dataloader, epoch, optimizer=None, scheduler=None):
 
     return loss_meter.avg, acc_meter.avg
 
+def get_untrained_disentangler():
+    n_lat = 128 # bottleneck 
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    output = Disentangler(device=device, z_dim = n_lat, inp_norm=cifar10_norm, inp_inorm=cifar10_inorm)
+    return output
+
 
 def get_lr(step, total_steps, lr_max, lr_min):
     """Compute learning rate according to cosine annealing schedule."""
@@ -118,8 +124,8 @@ def finetune(args: DictConfig) -> None:
 
     # Prepare model
     base_encoder = eval(args.backbone)
-    disentangler = get_disentangler()
-    pre_model = SimCLR(base_encoder, projection_dim=args.projection_dim, pred_epochs=10, disentangler=disentangler).cuda()
+    disentangler = get_untrained_disentangler()
+    pre_model = SimCLR(base_encoder, projection_dim=args.projection_dim, disentangler=disentangler).cuda()
     pre_model.load_state_dict(torch.load(args.load_path).state_dict())
     model = LinModel(pre_model.enc, feature_dim=pre_model.feature_dim, n_classes=len(train_set.targets))
     model = model.cuda()

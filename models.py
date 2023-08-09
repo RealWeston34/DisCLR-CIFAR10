@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from ae_utils_exp import Disentangler, cifar10_norm, cifar10_inorm
 
 
 class SimCLR(nn.Module):

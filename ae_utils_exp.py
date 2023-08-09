@@ -225,7 +225,11 @@ class Disentangler(torch.nn.Module):
                         replacement=True, num_samples=n_samples, generator=generator_ae)
             batch_sampler_ae = torch.utils.data.BatchSampler(random_sampler_ae, batch_size=batch_size, drop_last=False)
             dataloader_ae = iter(torch.utils.data.DataLoader(dataset, batch_sampler=batch_sampler_ae))
-            
+            # load backbone encoder
+            enc = resnet18(weights=None)
+            enc = torch.nn.Sequential(*list(enc.children())[:-1])
+            enc = enc.to(self.device)
+
             for g in range(n_group):
                 rec_loss_agg = 0.
                 adv_loss_agg = 0.
@@ -242,13 +246,11 @@ class Disentangler(torch.nn.Module):
 
 
                     # load pre-trained resnet18 model
-                    enc = resnet18(weights='DEFAULT')
 
                     # remove final fully connected layer
-                    enc = torch.nn.Sequential(*list(enc.children())[:-1])
+                    
 
                     # move resnet18_encoder to same device as input tensor
-                    enc = enc.to(self.device)
                     ex_no_grad = enc(ex_no_grad)
                     ex_no_grad = torch.squeeze(ex_no_grad)
                     

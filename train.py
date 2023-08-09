@@ -48,14 +48,14 @@ class CIFAR10Pair(CIFAR10):
         imgs = [self.transform(img), self.transform(img)]
         return torch.stack(imgs), target  # stack a positive pair
     
-def get_disentangler(dataset, ar, lr, ):
-    n_lat = 128 # bottleneck 
+def get_disentangler(dataset, ar, lr):
+    n_lat = 32 # bottleneck 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     output = Disentangler(device=device, z_dim = n_lat, inp_norm=cifar10_norm, inp_inorm=cifar10_inorm)
     # attempting to train the disentangler before training
     rec_loss, adv_loss, pred_loss = \
-    output.n_fit(dataset, 10, ar=ar, preds_train_iters=5, lr=lr,\
-           batch_size=512, generator_ae=torch.Generator().manual_seed(0),)
+    output.n_fit(dataset, 100, ar=ar, preds_train_iters=5, lr=lr,\
+           batch_size=100, generator_ae=torch.Generator().manual_seed(0),)
     return output
 
 
@@ -95,6 +95,7 @@ def get_color_distortion(s=0.5):  # 0.5 for CIFAR10 by default
 def train(args: DictConfig) -> None:
     print(args.projection_dim)
     cudnn.benchmark = True
+    torch.cuda.empty_cache()
 
     train_transform = transforms.Compose([transforms.RandomResizedCrop(32),
                                           transforms.RandomHorizontalFlip(p=0.5),
