@@ -26,8 +26,7 @@ torchvision_model_names = sorted(name for name in torchvision_models.__dict__
 model_names = ['vit_small', 'vit_base', 'vit_conv_small', 'vit_conv_base'] + torchvision_model_names
 
     
-def get_untrained_disentangler():
-    n_lat = 128 # bottleneck 
+def get_untrained_disentangler(n_lat):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     output = Disentangler(device=device, z_dim = n_lat, inp_norm=cifar10_norm, inp_inorm=cifar10_inorm)
     return output
@@ -36,7 +35,7 @@ def create_and_load_model(args):
     # create model
     print("=> creating model '{}'".format(args.backbone))
     base_encoder = eval(args.backbone)
-    disentangler=get_untrained_disentangler()
+    disentangler=get_untrained_disentangler(n_lat=args.projection_dim)
     contrast_model = SimCLR(base_encoder, projection_dim = args.projection_dim, disentangler=disentangler).cuda()
     args.repr_size = contrast_model.feature_dim
 

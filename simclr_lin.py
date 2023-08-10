@@ -85,8 +85,7 @@ def run_epoch(model, dataloader, epoch, optimizer=None, scheduler=None):
 
     return loss_meter.avg, acc_meter.avg
 
-def get_untrained_disentangler():
-    n_lat = 128 # bottleneck 
+def get_untrained_disentangler(n_lat):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     output = Disentangler(device=device, z_dim = n_lat, inp_norm=cifar10_norm, inp_inorm=cifar10_inorm)
     return output
@@ -124,7 +123,7 @@ def finetune(args: DictConfig) -> None:
 
     # Prepare model
     base_encoder = eval(args.backbone)
-    disentangler = get_untrained_disentangler()
+    disentangler = get_untrained_disentangler(n_lat=args.projection_dim)
     pre_model = SimCLR(base_encoder, projection_dim=args.projection_dim, disentangler=disentangler).cuda()
     pre_model.load_state_dict(torch.load(args.load_path).state_dict())
     model = LinModel(pre_model.enc, feature_dim=pre_model.feature_dim, n_classes=len(train_set.targets))

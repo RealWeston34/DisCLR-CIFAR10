@@ -48,8 +48,7 @@ class CIFAR10Pair(CIFAR10):
         imgs = [self.transform(img), self.transform(img)]
         return torch.stack(imgs), target  # stack a positive pair
     
-def get_disentangler(dataset, ar, lr):
-    n_lat = 32 # bottleneck 
+def get_disentangler(dataset, ar, lr, n_lat):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     output = Disentangler(device=device, z_dim = n_lat, inp_norm=cifar10_norm, inp_inorm=cifar10_inorm)
     # attempting to train the disentangler before training
@@ -118,7 +117,7 @@ def train(args: DictConfig) -> None:
     # Prepare model
     assert args.backbone in ['resnet18', 'resnet34']
     base_encoder = eval(args.backbone)
-    disentangler = get_disentangler(dataset=train_set, ar=0.1, lr=0.001)
+    disentangler = get_disentangler(dataset=train_set, ar=0.1, lr=0.001, n_lat=args.projection_dim)
     model = SimCLR(base_encoder, projection_dim=args.projection_dim, disentangler=disentangler).cuda()
     logger.info('Base model: {}'.format(args.backbone))
     logger.info('feature dim: {}, projection dim: {}'.format(model.feature_dim, args.projection_dim))
