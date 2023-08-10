@@ -13,6 +13,7 @@ from torch.utils.data import DataLoader
 from torchvision.datasets import CIFAR10
 from torchvision.models import resnet18, resnet34
 from torchvision import transforms
+from ae_utils_exp import Disentangler, cifar10_inorm, cifar10_norm
 
 from models import SimCLR
 from tqdm import tqdm
@@ -46,6 +47,15 @@ class CIFAR10Pair(CIFAR10):
         img = Image.fromarray(img)  # .convert('RGB')
         imgs = [self.transform(img), self.transform(img)]
         return torch.stack(imgs), target  # stack a positive pair
+    
+def get_disentangler(dataset, ar, lr, n_lat):
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    output = Disentangler(device=device, z_dim = n_lat, inp_norm=cifar10_norm, inp_inorm=cifar10_inorm)
+    # attempting to train the disentangler before training
+    rec_loss, adv_loss, pred_loss = \
+    output.n_fit(dataset, 100, ar=ar, preds_train_iters=5, lr=lr,\
+           batch_size=100, generator_ae=torch.Generator().manual_seed(0),)
+    return output
 
 
 def nt_xent(x, t=0.5):
@@ -84,6 +94,7 @@ def get_color_distortion(s=0.5):  # 0.5 for CIFAR10 by default
 def train(args: DictConfig) -> None:
     print(args.projection_dim)
     cudnn.benchmark = True
+    torch.cuda.empty_cache()
 
     train_transform = transforms.Compose([transforms.RandomResizedCrop(32),
                                           transforms.RandomHorizontalFlip(p=0.5),
@@ -100,11 +111,14 @@ def train(args: DictConfig) -> None:
                               shuffle=True,
                               num_workers=args.workers,
                               drop_last=True)
+    
+
 
     # Prepare model
     assert args.backbone in ['resnet18', 'resnet34']
     base_encoder = eval(args.backbone)
-    model = SimCLR(base_encoder, projection_dim=args.projection_dim, pred_epochs=10).cuda()
+    disentangler = get_disentangler(dataset=train_set, ar=0.1, lr=0.001, n_lat=args.projection_dim)
+    model = SimCLR(base_encoder, projection_dim=args.projection_dim, disentangler=disentangler).cuda()
     logger.info('Base model: {}'.format(args.backbone))
     logger.info('feature dim: {}, projection dim: {}'.format(model.feature_dim, args.projection_dim))
 

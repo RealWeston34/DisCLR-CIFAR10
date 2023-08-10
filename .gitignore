@@ -1,5 +1,6 @@
 data
 logs
+models
 _pycache_
 nohup.out
 *.pt
