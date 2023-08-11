@@ -15,7 +15,7 @@ data_dir: data
 
 # model
 backbone: resnet18 # or resnet34, resnet50
-projection_dim: 256 # "[...] to project the representation to a 128-dimensional latent space"
+projection_dim: 512 # "[...] to project the representation to a 128-dimensional latent space"
 
 # train options
 
@@ -36,7 +36,7 @@ temperature: 0.5 # see appendix B.7.: Optimal temperature under different batch 
 
 # finetune options
 finetune_epochs: 100 #100
-load_path: './simclr_resnet18_dim64_epoch100.pt' # checkpoint for finetune
+load_path: './models/simclr_resnet18_dim512_epoch100.pt' # checkpoint for finetune
 
 # save_reprs options
 reprs_batch_size: 1024
@@ -47,7 +47,7 @@ reprs_workers: 12
 reprs_seed: null
 reprs_epochs: 1
 reprs_data: ./data/cifar-10-batches-py
-reprs_pretrained: ./simclr_resnet18_dim64_epoch100.pt
+reprs_pretrained: ./simclr_resnet18_epoch100.pt
 reprs_dataset: 'cifar10_train'
 repr_size: 0
 start_epoch: 0

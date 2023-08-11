@@ -7,7 +7,6 @@ class SimCLR(nn.Module):
         super().__init__()
         self.enc = base_encoder(weights=None)  # load model from torchvision.models without pretrained weights.
         self.feature_dim = self.enc.fc.in_features
-        print(f"feature dimension:{self.feature_dim}")
 
         # Customize for CIFAR10. Replace conv 7x7 with conv 3x3, and remove first max pooling.
         # See Section B.9 of SimCLR paper.

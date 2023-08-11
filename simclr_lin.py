@@ -107,19 +107,11 @@ def finetune(args: DictConfig) -> None:
     train_set = CIFAR10(root=data_dir, train=True, transform=train_transform, download=False)
     test_set = CIFAR10(root=data_dir, train=False, transform=test_transform, download=False)
 
-    print("Length of train_set: " + str(len(train_set)))
-    print(f"Length of test set: {len(test_set)}")
-
     n_classes = 100
     indices = np.random.choice(len(train_set), 10*n_classes, replace=False)
-    print(f"Number of indices: {len(indices)}")
     sampler = SubsetRandomSampler(indices)
-    print("sampler: ")
-    print(sampler)
     train_loader = DataLoader(train_set, batch_size=args.batch_size, drop_last=True, sampler=sampler) #0 because batch sizes is greater than the number of classes
-    print("Length of train_loader: " + str(len(train_loader)))
     test_loader = DataLoader(test_set, batch_size=args.batch_size, shuffle=False)
-    print("Length of test_loader: " + str(len(test_loader)))
 
     # Prepare model
     base_encoder = eval(args.backbone)
